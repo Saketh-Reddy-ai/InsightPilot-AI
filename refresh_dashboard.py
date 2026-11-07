@@ -291,11 +291,17 @@ def upload(html: str, project: str, bucket: str, name: str, generated_at: str) -
     # the URL never changes, so viewers keep seeing last week's numbers.
     blob.content_type = "text/html; charset=utf-8"
     blob.cache_control = "no-cache, max-age=0"
-    blob.metadata = {"generated_at": generated_at}
 
     # No ACL is touched here. The object inherits the bucket's IAM, so a private
     # bucket stays private. Making it public is a deliberate, separate act.
     blob.upload_from_string(html, content_type="text/html; charset=utf-8")
+
+    # Stamp when this page was built, so the object can be answered for without
+    # downloading and grepping it. This has to be a patch *after* the upload:
+    # setting blob.metadata beforehand looks like it works and silently does
+    # nothing, because the upload writes a fresh object resource over it.
+    blob.metadata = {"generated_at": generated_at}
+    blob.patch()
     return f"gs://{bucket}/{name}"
 
 
