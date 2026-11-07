@@ -1,0 +1,29 @@
+# Build output. The published page is generated from dashboard/index.html plus
+# whatever BigQuery says today, so committing a copy of it would mean two
+# versions of the same thing and a 200 KB diff on every refresh.
+dist/
+*.generated.html
+
+# Nothing in this repo should ever need a key file. The job runs as a service
+# account on Vertex AI, and a local run uses your own gcloud credentials
+# (`gcloud auth application-default login`). This line is here so that a
+# downloaded key cannot be committed by accident.
+*.json.key
+*-key.json
+service-account*.json
+credentials.json
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

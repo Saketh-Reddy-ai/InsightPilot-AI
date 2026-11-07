@@ -1,0 +1,6 @@
+# Normalise line endings so a clone on Windows and a clone on Linux agree.
+# The shell script matters most: CRLF in it makes the shebang fail.
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.gif binary
