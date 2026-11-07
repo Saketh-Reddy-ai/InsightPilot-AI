@@ -112,10 +112,41 @@ without an account. Then:
    time. The service account needs **BigQuery Job User** on the project and
    **Storage Object User** on the bucket.
 
-**Going public later** is two changes, in this order: turn public access
-prevention off on the bucket, then grant `allUsers` the *Storage Object Viewer*
-role. The permanent link is then `storage.googleapis.com/BUCKET/OBJECT`. Never
-do this with a bucket holding anything that is not already public.
+### Going public
+
+Two changes, in this order:
+
+```bash
+gcloud storage buckets update gs://YOUR-BUCKET --no-public-access-prevention
+```
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://YOUR-BUCKET \
+  --member=allUsers --role=roles/storage.objectViewer
+```
+
+The permanent link is then `storage.googleapis.com/BUCKET/OBJECT`.
+
+**That grant is bucket-wide, and there is no way to narrow it.** The obvious
+instinct is to scope it to the one object you actually want served, with an IAM
+condition on `resource.name`. Cloud Storage refuses:
+
+```
+HTTPError 400: PublicResourceAllowConditionCheck
+Error: Conditions are not allowed on public resources.
+```
+
+Per-object ACLs are the other way to do it, and uniform bucket-level access —
+which you want on, because it is what removes per-object ACLs as a leak path —
+disables exactly that. So the honest model is: **a bucket is public or it is
+not.** Treat this one as a public web root. Everything in it is world-readable,
+including the `template/` prefix, which is why the template here carries sample
+data and the queries are the same ones already published in this repo.
+
+If you ever need the job's inputs to be private, they do not belong in the same
+bucket as the page. Put them in a second, private bucket, or — since this repo
+is public — point `--template` and `--sql` at GitHub raw URLs and keep the
+public bucket holding nothing but the published page.
 
 ### Creating the bucket by hand
 
@@ -215,6 +246,13 @@ two statements instead of one, the cost estimate reads zero and
 under every ceiling. Measured: one statement estimates at 8.4 MB; the same query
 with a second statement appended estimates at 0. The script now refuses to run
 on a zero estimate. A single statement ending in a semicolon is fine.
+
+**You cannot make one object public.** An IAM condition scoped to a single
+object is rejected outright — *"Conditions are not allowed on public
+resources"* — and the per-object ACL route is closed off by the uniform
+bucket-level access you want switched on. Public is a property of the bucket.
+Plan the bucket's contents around that rather than discovering it at the moment
+you want a demo link.
 
 **The authenticated link is not the public link.**
 `storage.cloud.google.com` needs every viewer signed in with access, and signed
